@@ -1,0 +1,19 @@
+Name:                TbpHs
+Version:             0.0.1
+Description:         thepiratebay.se TVShow downloader
+License:             MIT
+License-file:        LICENSE
+Author:              Vitaly Turinsky
+Maintainer:          vitaly.turinsky@gmail.com
+Build-Type:          Simple
+Cabal-Version:       >=1.14
+
+Executable tbphs
+  Main-is:           Main.hs
+  Build-Depends:     base >= 4,
+                     process >= 1.1.0.2,
+                     tagsoup >= 0.13.1,
+                     HTTP >= 4000.2.8
+  Default-language:  Haskell2010
+  Ghc-options:       -Wall -threaded
+

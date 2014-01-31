@@ -128,14 +128,14 @@ namesAndMagnets page = liftM catMaybes $ liftM (map decodeRow) columns
         columns = liftM (map parseColumns) $ liftM parseRows $ parseTable page
 
 
-deduceTVShow :: 
+--deduceTVShow :: 
 
 
 utorrentCommand :: String
 utorrentCommand = "\"C:\\Program Files (x86)\\uTorrent\\uTorrent.exe\" /DIRECTORY"
 
 startMagnetDonwload :: Filepath -> Magnet -> IO (Maybe Int)
-startTorrentDonwload destination_folder (Magnet magnet) = do
+startMagnetDonwload destination_folder (Magnet magnet) = do
     (_, _, _, pHandle) <- createProcess $ shell command
     ret <- waitForProcess pHandle
     case ret of
@@ -144,7 +144,7 @@ startTorrentDonwload destination_folder (Magnet magnet) = do
     where
         command = utorrentCommand ++ " \"" ++ destination_folder ++ "\" \"" ++ magnet ++ "\""
 
-startTorrentDownload :: TVShow -> Torrent -> 
+--startTorrentDownload :: TVShow -> Torrent -> 
 
 
 main :: IO ()
