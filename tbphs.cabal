@@ -13,7 +13,8 @@ Executable tbphs
   Build-Depends:     base >= 4,
                      process >= 1.1.0.2,
                      tagsoup >= 0.13.1,
-                     HTTP >= 4000.2.8
+                     HTTP >= 4000.2.8,
+                     configfile >= 1.1.1
   Default-language:  Haskell2010
   Ghc-options:       -Wall -threaded
 
