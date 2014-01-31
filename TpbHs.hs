@@ -4,15 +4,13 @@ module TpbHs
 
 import qualified Network.HTTP as Http
 import qualified Network.Browser as Browser
+import Torrent (Magnet(..))
 import TpbParser
 import UTorrentUtils
+import Config
 
-newtype URL = URL String deriving (Eq, Read, Show)
-
-type TVShow = String
-
-getPage :: URL -> IO String
-getPage (URL url) = do
+getPage :: String -> IO String
+getPage url = do
         (_, rsp) <- Browser.browse $ do
                     Browser.setAllowRedirects True
                     let req = Http.getRequest url
@@ -38,7 +36,10 @@ getPage (URL url) = do
 
 getNewEpisodes :: IO ()
 getNewEpisodes = do
-    page <- getPage $ URL "http://thepiratebay.se/search/mentalist/0/7/208"
+    config <- liftM parseConfig $ readFile "TpbHs.config"
+    putStrLn $ show config
+{--
+    page <- getPage $ "http://thepiratebay.se/search/mentalist/0/7/208"
     putStrLn ""
     case parseResultsPage page of
          Left err -> putStrLn err
@@ -47,3 +48,4 @@ getNewEpisodes = do
     ret <- startMagnetDonwload "D:\\Internet\\New folder (4)" $ Magnet "magnet:?xt=urn:btih:38135cb873317dea857c8737a3c860d3139a9448&dn=The.Mentalist.S06E12.720p.HDTV.X264-DIMENSION%5Brartv%5D&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Ftracker.publicbt.com%3A80&tr=udp%3A%2F%2Ftracker.istole.it%3A6969&tr=udp%3A%2F%2Ftracker.ccc.de%3A80&tr=udp%3A%2F%2Fopen.demonii.com%3A1337"
     
     putStrLn $ show ret
+    --}

@@ -56,9 +56,9 @@ parseSize size_str = fmap Bytes $ fmap round $ parse $ words size_str
     where
         parse (n:mult:[]) = (*) <$> Just (read n :: Double) <*> getMult mult
         parse _ = Nothing
-        getMult "GiB" = Just $ (2 :: Double) ^ 30
-        getMult "MiB" = Just $ (2 :: Double) ^ 20
-        getMult "KiB" = Just $ (2 :: Double) ^ 10
+        getMult "GiB" = Just $ (2 :: Double) ^ (30 :: Int)
+        getMult "MiB" = Just $ (2 :: Double) ^ (20 :: Int)
+        getMult "KiB" = Just $ (2 :: Double) ^ (10 :: Int)
         getMult "B" = Just $ (1 :: Double)
         getMult _ = Nothing
 
@@ -69,10 +69,6 @@ decodeSize descr_tags = needed_tag >>= findTagText >>= findSize >>= parseSize
 
 decodeInt :: [Tag String] -> Maybe Int
 decodeInt int_tags = fmap read $ findTagText int_tags
-
-maybeTuple :: (Maybe a, Maybe b, Maybe c, Maybe d, Maybe e) -> Maybe (a, b, c, d, e)
-maybeTuple (Just a, Just b, Just c, Just d, Just e) = Just (a, b, c, d, e)
-maybeTuple _ = Nothing
 
 decodeRow :: [[Tag String]] -> Maybe Torrent
 decodeRow (_:descr:s:l:[]) = fmap torrentFromTuple $ (,,,,) <$> decodeName descr <*> decodeMagnet descr <*> decodeSize descr <*> decodeInt s <*> decodeInt l
