@@ -31,6 +31,7 @@ data Episode = Episode Int Int
 
 instance Show Episode where
     show (Episode s e) = printf "S%02d%02d" s e
+    // !!! skip zeroes
 
 parseEpisode :: String -> Maybe Episode
 parseEpisode str = parseEpisode' $ map toLower $ str

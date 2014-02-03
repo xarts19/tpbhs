@@ -6,10 +6,12 @@ module Config
 , parseConfig
 ) where
 
+import Data.Maybe
 import Data.ConfigFile
-import Torrent (Episode, firstEpisode)
+import Torrent (Episode, firstEpisode, parseEpisode)
 
-data TVShowConfig = TVShowConfig { search_term :: String
+data TVShowConfig = TVShowConfig { name :: String
+                                 , search_term :: String
                                  , folder :: String
                                  , last_watched :: Episode
                                  , last_downloaded :: Episode } deriving (Show)
@@ -25,16 +27,17 @@ parseConfig' :: String -> Either CPError Config
 parseConfig' config_content = do
     cp <- readstring emptyCP config_content
     base_dir <- get cp "DEFAULT" "base_folder"
-    let tvshows = sections cp
-    return $ map (parseShow cp base_dir) tvshows
+    return $ map (parseShow cp base_dir) (sections cp)
+
+parseShow :: ConfigParser -> String -> SectionSpec -> TVShowConfig
+parseShow cp base_dir tvshow = 
+    let st = either (\_ -> tvshow) id (get cp tvshow "search_term")
+        lw = getEpisode (get cp tvshow "last_watched")
+        ld = getEpisode (get cp tvshow "last_downloaded")
+    in TVShowConfig { name = tvshow
+                    , search_term = st
+                    , folder = base_dir ++ tvshow
+                    , last_watched = lw
+                    , last_downloaded = ld }
     where
-        parseShow :: ConfigParser -> String -> SectionSpec -> TVShowConfig
-        parseShow cp base_dir tvshow = 
-            let st' = do get cp tvshow "search_term"
-                st = case st' of
-                        Right t -> t
-                        Left _ -> tvshow
-            in TVShowConfig { search_term =  st
-                            , folder = base_dir ++ tvshow
-                            , last_watched = firstEpisode
-                            , last_downloaded = firstEpisode }
+        getEpisode = either (\_ -> firstEpisode) (\s -> fromMaybe firstEpisode (parseEpisode s)) 
