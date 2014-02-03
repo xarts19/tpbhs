@@ -4,6 +4,7 @@ module TpbHs
 
 import qualified Network.HTTP as Http
 import qualified Network.Browser as Browser
+import Control.Monad
 import Torrent (Magnet(..))
 import TpbParser
 import UTorrentUtils
