@@ -15,6 +15,9 @@ import Config
 import FSUtils
 import TVShow
 
+configFilename :: String
+configFilename = "tpbhs.config"
+
 getPage :: String -> IO String
 getPage url = do
         let req = getRequest url
@@ -115,7 +118,7 @@ getNewEpisodes' tvshow = do
 
 getNewEpisodes :: IO ()
 getNewEpisodes = do
-    config <- liftM parseConfig $ readFile "TpbHs.config"
+    config <- liftM parseConfig $ readFile configFilename
     case config of
          Left err -> putStrLn err
          Right cfg -> do
@@ -124,7 +127,7 @@ getNewEpisodes = do
              let cfg' = cfg { tvshows = tvshows'' }
              case writeConfig cfg' of
                   Left err -> putStrLn err
-                  Right str -> writeFile "TpbHs1.config" str
+                  Right str -> writeFile configFilename str
 
 {--
     page <- getPage $ "http://thepiratebay.se/search/mentalist/0/7/208"
