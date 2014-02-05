@@ -47,7 +47,7 @@ getTorrentFor :: String -> Episode -> Quality -> IO (Maybe T.Torrent)
 getTorrentFor tvshow_name episode q = do
     let query = tvshow_name
     let search = query ++ " " ++ show episode
-    let search' = case Quality of
+    let search' = case q of
                     HD -> search ++ " 720p"
                     SD -> search
     putStrLn $ "Searching for '" ++ search' ++ "'..."
