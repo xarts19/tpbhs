@@ -48,8 +48,8 @@ getTorrentFor tvshow_name episode q = do
     let query = tvshow_name
     let search = query ++ " " ++ show episode
     let search' = case Quality of
-        HD -> search ++ " 720p"
-        SD -> search
+                    HD -> search ++ " 720p"
+                    SD -> search
     putStrLn $ "Searching for '" ++ search' ++ "'..."
     page <- getPage $ tpb_get_search_url q search'
     case parseResultsPage page of
