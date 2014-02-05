@@ -7,7 +7,7 @@ import System.Exit
 import Torrent (Magnet(..))
 
 utorrentCommand :: String
-utorrentCommand = "\"C:\\Program Files (x86)\\uTorrent\\uTorrent.exe\" /DIRECTORY"
+utorrentCommand = "C:\\\"Program Files (x86)\"\\uTorrent\\uTorrent.exe /DIRECTORY"
 
 startMagnetDonwload :: FilePath -> Magnet -> IO (Maybe Int)
 startMagnetDonwload destination_folder (Magnet magnet) = do
