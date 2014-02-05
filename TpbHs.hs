@@ -5,7 +5,6 @@ module TpbHs
 import Data.Ord
 import Data.List
 import Data.Maybe
-import Control.Monad
 import Control.Applicative
 import Network.HTTP
 import qualified Torrent as T
@@ -44,9 +43,9 @@ tpb_get_search_url :: Quality -> String -> String
 tpb_get_search_url q search = "http://thepiratebay.se/search/" ++ urlEncode search ++
                               "/0/" ++ tpb_sortby_seeders ++ "/" ++ tpb_section_tvshows q
 
-getTorrentFor :: TVShow -> Episode -> Quality -> IO (Maybe T.Torrent)
-getTorrentFor tvshow episode q = do
-    let query = search_term tvshow
+getTorrentFor :: String -> Episode -> Quality -> IO (Maybe T.Torrent)
+getTorrentFor tvshow_name episode q = do
+    let query = tvshow_name
     let search = query ++ " " ++ show episode
     putStrLn $ "Searching for '" ++ search ++ "'..."
     page <- getPage $ tpb_get_search_url q search
@@ -66,9 +65,9 @@ getTorrentFor tvshow episode q = do
         sizeCorrect tor = T.size tor > T.Bytes (100 * T.mega) && T.size tor < T.Bytes (3 * T.giga)
         hasSeeds tor = T.seeders tor > 0
 
-runTorrent :: TVShow -> T.Torrent -> IO Bool
-runTorrent tvshow torrent = do
-    ret <- startMagnetDonwload (folder tvshow) (T.magnet torrent)
+runTorrent :: FilePath -> T.Torrent -> IO Bool
+runTorrent folder torrent = do
+    ret <- startMagnetDonwload folder (T.magnet torrent)
     case ret of
          Nothing -> do
              putStrLn $ "Torrent '" ++ T.name torrent ++ "' started"
@@ -77,66 +76,35 @@ runTorrent tvshow torrent = do
              putStrLn $ "Failed to start torrent '" ++ T.name torrent ++ "': Code " ++ show code
              return False
 
-findFirstJust :: [IO (Maybe T.Torrent)] -> IO (Maybe T.Torrent)
-findFirstJust [] = return Nothing
-findFirstJust (x:xs) = do
+findFirstValid :: [IO (Maybe T.Torrent)] -> IO (Maybe T.Torrent)
+findFirstValid [] = return Nothing
+findFirstValid (x:xs) = do
     res <- x
     case res of
-        Nothing -> findFirstJust xs
+        Nothing -> findFirstValid xs
         Just val -> return $ Just val
 
-getNewEpisodes'' :: TVShow -> IO TVShow
-getNewEpisodes'' tvshow = do
-    valid <- pathValid tvshow
-    case valid of
-         True -> getNewEpisodes' tvshow
-         False -> do
-             putStrLn $ "No folder for '" ++ name tvshow ++ "'. Aborting"
-             return tvshow
-
---startTorrentDownload :: TVShow -> Torrent -> 
-getNewEpisodes' :: TVShow -> IO TVShow
-getNewEpisodes' tvshow = do
-    let ld = last_downloaded tvshow
-    let nextEp = nextEpisode ld
-    let nextSe = nextSeason ld
-    tor <- findFirstJust [getTorrentFor tvshow nextEp HD, getTorrentFor tvshow nextEp SD, 
-                          getTorrentFor tvshow nextSe HD, getTorrentFor tvshow nextSe SD]
+getNewEpisodes' :: TVShow -> IO ()
+getNewEpisodes' (TVShow name folder ep) = do
+    let nextEp = nextEpisode ep
+    let nextSe = nextSeason ep
+    tor <- findFirstValid [getTorrentFor name nextEp HD, getTorrentFor name nextEp SD, 
+                           getTorrentFor name nextSe HD, getTorrentFor name nextSe SD]
     case tor of
-         Nothing -> do
-             putStrLn "Giving up"
-             return tvshow
+         Nothing -> putStrLn "Giving up"
          Just t -> do
-             res <- runTorrent tvshow t
+             res <- runTorrent folder t
              case res of
                   True -> do
-                      let newEp = fromMaybe ld (parseEpisode $ T.name t)
-                      getNewEpisodes' $ tvshow { last_downloaded = newEp }
+                      let newEp = fromMaybe ep (parseEpisode $ T.name t)
+                      getNewEpisodes' $ TVShow name folder newEp
                   False -> do
                       putStrLn "Aborting"
-                      return tvshow
 
 getNewEpisodes :: IO ()
 getNewEpisodes = do
-    config <- liftM parseConfig $ readFile configFilename
-    case config of
-         Left err -> putStrLn err
-         Right cfg -> do
-             tvshows' <- updateLastDownloaded $ tvshows cfg
-             tvshows'' <- mapM getNewEpisodes'' $ tvshows'
-             let cfg' = cfg { tvshows = tvshows'' }
-             case writeConfig cfg' of
-                  Left err -> putStrLn err
-                  Right str -> writeFile configFilename str
-
-{--
-    page <- getPage $ "http://thepiratebay.se/search/mentalist/0/7/208"
-    putStrLn ""
-    case parseResultsPage page of
-         Left err -> putStrLn err
-         Right rs -> mapM_ putStrLn (map show rs)
-    
-    ret <- startMagnetDonwload "D:\\Internet\\New folder (4)" $ Magnet "magnet:?xt=urn:btih:38135cb873317dea857c8737a3c860d3139a9448&dn=The.Mentalist.S06E12.720p.HDTV.X264-DIMENSION%5Brartv%5D&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Ftracker.publicbt.com%3A80&tr=udp%3A%2F%2Ftracker.istole.it%3A6969&tr=udp%3A%2F%2Ftracker.ccc.de%3A80&tr=udp%3A%2F%2Fopen.demonii.com%3A1337"
-    
-    putStrLn $ show ret
-    --}
+    tvshows <- enumShows
+    _ <- mapM getNewEpisodes' tvshows
+    case writeConfig tvshows of
+      Left err -> putStrLn err
+      Right str -> writeFile configFilename str

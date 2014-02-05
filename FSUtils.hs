@@ -1,33 +1,38 @@
 module FSUtils
-( updateLastDownloaded
-, pathValid
+( enumShows
 ) where
 
+import Data.List
 import Data.Maybe
+import Control.Monad
+import Control.Applicative
 import System.Directory
-import qualified TVShow as TV
+import System.FilePath
+import TVShow
 
-import Debug.Trace
+lastEpisodeFile :: FilePath -> Maybe Episode
+lastEpisodeFile filename = 
+    if isPrefixOf "last-" filename
+        then parseEpisode filename
+        else Nothing
 
-updateLastDownloaded :: [TV.TVShow] -> IO [TV.TVShow]
-updateLastDownloaded config = mapM update' config
-    where
-        update' tvshow = do
-            let dir = TV.folder tvshow
-            exists <- doesDirectoryExist dir
-            if (exists) then do
-                            contents <- getDirectoryContents dir
-                            let episodes = catMaybes $ map (TV.parseEpisodeFromFilename tvshow) contents
-                            let lastEp = maximum $ (TV.last_downloaded tvshow):episodes
-                            if (lastEp > TV.last_downloaded tvshow)
-                               then do
-                                   putStrLn $ "Updating last watched for '" ++ TV.name tvshow ++ "' from " ++
-                                              show (TV.last_downloaded tvshow) ++ " to " ++ show lastEp
-                                   return tvshow { TV.last_downloaded = lastEp }
-                               else return tvshow
-                        else do
-                            traceIO $ "Directory not found: " ++ show dir
-                            return tvshow
+getTVShow :: FilePath -> IO (Maybe TVShow)
+getTVShow filename = do
+    let show_name = takeBaseName filename
+    exists <- doesDirectoryExist filename
+    case exists of
+        False -> return Nothing
+        True -> do
+            files <- getDirectoryContents filename
+            let ep = foldl1 (<|>) $ Nothing : (map lastEpisodeFile files)
+            let eps = catMaybes $ map (parseEpisodeFromTitle show_name) files
+            
+            -- if some episodes are present that are more recent then last episode file suggests
+            -- then use them
+            return $ fmap (\e -> TVShow show_name filename e) $ fmap (\e -> maximum (e:eps)) ep
 
-pathValid :: TV.TVShow -> IO Bool
-pathValid tvshow  = doesDirectoryExist (TV.folder tvshow)
+enumShows :: IO [TVShow]
+enumShows = do
+    cwd <- getCurrentDirectory
+    folders <- getDirectoryContents cwd
+    liftM (catMaybes) $ mapM getTVShow folders

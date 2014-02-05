@@ -5,7 +5,8 @@ module TVShow
 , firstEpisode
 , nextEpisode
 , nextSeason
-, parseEpisodeFromFilename
+, lastFromEpisodes
+, parseEpisodeFromTitle
 ) where
 
 import Data.Char
@@ -48,15 +49,24 @@ nextEpisode (Episode s e) = Episode s (e+1)
 nextSeason :: Episode -> Episode
 nextSeason (Episode s _) = Episode (s+1) 1
 
+lastFromEpisodes :: [Episode] -> Episode
+lastFromEpisodes = maximum
 
-data TVShow = TVShow { name :: String
-                     , search_term :: String
-                     , folder :: String
-                     , last_watched :: Episode
-                     , last_downloaded :: Episode } deriving (Show)
 
-parseEpisodeFromFilename :: TVShow -> String -> Maybe Episode
-parseEpisodeFromFilename tvshow filename =
-    let does_match = all (\x -> (map toLower filename =~ x) :: Bool) $ words (search_term tvshow)
+data TVShow = TVShow String FilePath Episode deriving (Show)
+
+myWords :: String -> [String]
+myWords s = case dropWhile predicate s of
+                      "" -> []
+                      s' -> w : myWords s''
+                            where (w, s'') = break predicate s'
+    where
+        predicate = not . isAlphaNum
+
+type TVShowName = String
+
+parseEpisodeFromTitle :: TVShowName -> String -> Maybe Episode
+parseEpisodeFromTitle show_name filename =
+    let does_match = all (\x -> (map toLower filename =~ x) :: Bool) $ myWords show_name
     in if (does_match) then parseEpisode filename
                        else Nothing

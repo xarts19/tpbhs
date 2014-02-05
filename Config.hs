@@ -2,18 +2,16 @@
 
 module Config
 ( Config
-, tvshows
 , parseConfig
 , writeConfig
 ) where
 
-import Data.Char
 import Data.Maybe
 import Data.ConfigFile
 import Control.Monad
 import TVShow
 
-data Config = Config { tvshows :: [TVShow], base_directory :: String }
+type Config = [TVShow]
 
 parseConfig :: String -> Either String Config
 parseConfig x = case parseConfig' x of
@@ -23,34 +21,25 @@ parseConfig x = case parseConfig' x of
 parseConfig' :: String -> Either CPError Config
 parseConfig' config_content = do
     cp <- readstring emptyCP config_content
-    base_dir <- get cp "DEFAULT" "base_folder"
-    return $ Config { base_directory = base_dir, tvshows = map (parseShow cp base_dir) (sections cp) }
+    return $ map (parseShow cp) (sections cp)
 
-parseShow :: ConfigParser -> String -> SectionSpec -> TVShow
-parseShow cp base_dir tvshow = 
-    let st = either (\_ -> tvshow) id (get cp tvshow "search_term")
-        lw = getEpisode (get cp tvshow "last_watched")
-        ld = getEpisode (get cp tvshow "last_downloaded")
-    in TVShow { name = tvshow
-              , search_term = map toLower st
-              , folder = base_dir ++ tvshow
-              , last_watched = lw
-              , last_downloaded = ld }
+parseShow :: ConfigParser -> SectionSpec -> TVShow
+parseShow cp tvshow = TVShow tvshow folder ld
     where
-        getEpisode = either (\_ -> firstEpisode) (\s -> fromMaybe firstEpisode (parseEpisode s)) 
+        ld = getEpisode (get cp tvshow "last_downloaded")
+        getEpisode = either (\_ -> firstEpisode) (\s -> fromMaybe firstEpisode (parseEpisode s))
+        folder = getFolder (get cp tvshow "folder")
+        getFolder = either (\_ -> tvshow) (\s -> s)
 
 writeConfig :: Config -> Either String String
-writeConfig config = case baseCP >>= \x -> foldM addShow x $ tvshows config of
+writeConfig config = case foldM addShow emptyCP config of
                         Left err -> Left $ show err
                         Right cfg -> Right $ to_string cfg
     where
-        baseCP = set emptyCP "DEFAULT" "base_folder" $ base_directory config
-        addShow cp tvshow = do
-            let sect = name tvshow
+        addShow cp (TVShow name folder ep) = do
+            let sect = name
             let x = cp
             x <- add_section x sect
-            x <- if (search_term tvshow /= name tvshow) then set x sect "search_term" (search_term tvshow)
-                                                        else return x
-            x <- setshow x sect "last_downloaded" (last_downloaded tvshow)
-            x <- setshow x sect "last_watched" (last_watched tvshow)
+            x <- set x sect "folder" folder
+            x <- setshow x sect "last_downloaded" ep
             return x
