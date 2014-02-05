@@ -9,7 +9,7 @@ Copyright:           Vitaly Turinsky
 Build-type:          Simple
 Cabal-version:       >=1.10
 
-Executable tbphs
+Executable tpbhs
   Main-is:           Main.hs
   Other-extensions:  GeneralizedNewtypeDeriving
   Build-depends:     base >= 4.6,
