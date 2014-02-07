@@ -21,12 +21,8 @@ extractTag tag tags = extract tag [] tags
 findTagText :: [Tag String] -> Maybe String
 findTagText tags = fmap fromTagText $ find isTagText tags
 
-maybeHead :: [a] -> Maybe a
-maybeHead [] = Nothing
-maybeHead (x:_) = Just x
-
 parseTable :: String -> Either Error [Tag String]
-parseTable page = case maybeHead $ extract "table" [("id", "searchResult")] $ parseTags page of
+parseTable page = case listToMaybe $ extract "table" [("id", "searchResult")] $ parseTags page of
                        Nothing -> Left "No table found"
                        Just t -> Right t
 
@@ -39,12 +35,12 @@ parseColumns singleRow = extractTag "td" singleRow
 decodeName :: [Tag String] -> Maybe String
 decodeName descr_tags = needed_tag >>= findTagText
     where
-        needed_tag = maybeHead $ extract "a" [("class", "detLink")] descr_tags
+        needed_tag = listToMaybe $ extract "a" [("class", "detLink")] descr_tags
 
 decodeMagnet :: [Tag String] -> Maybe Magnet
-decodeMagnet descr_tags = fmap Magnet $ fmap (fromAttrib "href") $ needed_tag >>= maybeHead
+decodeMagnet descr_tags = fmap Magnet $ fmap (fromAttrib "href") $ needed_tag >>= listToMaybe
     where
-        needed_tag = maybeHead $ extract "a" [("title", "Download this torrent using magnet")] descr_tags
+        needed_tag = listToMaybe $ extract "a" [("title", "Download this torrent using magnet")] descr_tags
 
 findSize :: String -> Maybe String
 findSize descr = case afterSize of { "" -> Nothing; str -> Just str }
@@ -65,7 +61,7 @@ parseSize size_str = fmap Bytes $ fmap round $ parse $ words size_str
 decodeSize :: [Tag String] -> Maybe Bytes
 decodeSize descr_tags = needed_tag >>= findTagText >>= findSize >>= parseSize
     where
-        needed_tag = maybeHead $ extract "font" [("class", "detDesc")] descr_tags
+        needed_tag = listToMaybe $ extract "font" [("class", "detDesc")] descr_tags
 
 decodeInt :: [Tag String] -> Maybe Int
 decodeInt int_tags = fmap read $ findTagText int_tags
