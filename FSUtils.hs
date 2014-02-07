@@ -24,12 +24,13 @@ getTVShow filename = do
         False -> return Nothing
         True -> do
             files <- getDirectoryContents filename
+            absolute_path <- canonicalizePath filename
             let ep = foldl1 (<|>) $ Nothing : (map lastEpisodeFile files)
             let eps = catMaybes $ map (parseEpisodeFromTitle show_name) files
             
             -- if some episodes are present that are more recent then last episode file suggests
             -- then use them
-            return $ fmap (\e -> TVShow show_name filename e) $ fmap (\e -> maximum (e:eps)) ep
+            return $ fmap (\e -> TVShow show_name absolute_path e) $ fmap (\e -> maximum (e:eps)) ep
 
 enumShows :: IO [TVShow]
 enumShows = do
