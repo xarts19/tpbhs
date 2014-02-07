@@ -39,7 +39,7 @@ writeConfig config = case foldM addShow emptyCP config of
         addShow cp (TVShow name folder ep) = do
             let sect = name
             let x = cp
-            x <- add_section x sect
-            x <- set x sect "folder" folder
-            x <- setshow x sect "last_downloaded" ep
-            return x
+            x' <- add_section x sect
+            x'' <- set x' sect "folder" folder
+            x''' <- setshow x'' sect "last_downloaded" ep
+            return x'''

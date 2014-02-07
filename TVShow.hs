@@ -6,7 +6,7 @@ module TVShow
 , nextEpisode
 , nextSeason
 , lastFromEpisodes
-, parseEpisodeFromTitle
+, isTitleValid
 ) where
 
 import Data.Char
@@ -28,15 +28,22 @@ instance Ord Episode where
                                             | s1 == s2 && e1 < e2 = LT
                                             | s1 == s2 && e1 > e2 = GT
                                             | otherwise = EQ
+                                            
+episodeRegex :: String
+episodeRegex = "s([0-9]?[0-9])e?([0-9]?[0-9])"
 
-{--
-let m = match' $ map toLower $ str
-in trace (str ++ " -> " ++ show m) parse' m
---}
+rMatch :: String -> String -> [String]
+rMatch str regex = getAllTextSubmatches (str =~ regex :: AllTextSubmatches [] String)
+
+joinRegex :: [String] -> String
+joinRegex [] = []
+joinRegex (x:[]) = x
+joinRegex (x:xs) = x ++ ".*" ++ joinRegex xs
+
 parseEpisode :: String -> Maybe Episode
 parseEpisode str = parse' $ match' $ map toLower $ str
     where
-        match' s = getAllTextSubmatches (s =~ "s([0-9]?[0-9])e?([0-9]?[0-9])" :: AllTextSubmatches [] String)
+        match' s = rMatch s episodeRegex
         parse' (_:s:ep:[]) = Episode <$> readMaybe s <*> readMaybe ep
         parse' _ = Nothing
 
@@ -65,8 +72,9 @@ myWords s = case dropWhile predicate s of
 
 type TVShowName = String
 
-parseEpisodeFromTitle :: TVShowName -> String -> Maybe Episode
-parseEpisodeFromTitle show_name filename =
-    let does_match = all (\x -> (map toLower filename =~ x) :: Bool) $ myWords show_name
-    in if (does_match) then parseEpisode filename
-                       else Nothing
+isTitleValid :: TVShowName -> String -> Bool
+isTitleValid showName title = (not . null) $ rMatch normTitle nameAndEpRegex
+    where
+        normTitle = map toLower title
+        normShowName = map toLower showName
+        nameAndEpRegex = joinRegex (myWords normShowName ++ [episodeRegex])

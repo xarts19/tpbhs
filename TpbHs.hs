@@ -73,7 +73,7 @@ runTorrent folder torrent = do
     ret <- startMagnetDonwload folder (T.magnet torrent)
     case ret of
          Nothing -> do
-             putStrLn $ "Torrent '" ++ T.name torrent ++ "' started"
+             putStrLn $ "Started downloading '" ++ T.name torrent ++ "' to '" ++ folder ++ "'"
              return True
          Just code -> do
              putStrLn $ "Failed to start torrent '" ++ T.name torrent ++ "': Code " ++ show code
@@ -106,6 +106,8 @@ getNewEpisodes' (TVShow name folder ep) = do
 
 getNewEpisodes :: IO ()
 getNewEpisodes = do
+    -- start uTorrent just in case
+    startUTorrent
     tvshows <- enumShows
     _ <- mapM getNewEpisodes' tvshows
     case writeConfig tvshows of

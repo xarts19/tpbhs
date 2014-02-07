@@ -26,7 +26,16 @@ getTVShow filename = do
             files <- getDirectoryContents filename
             absolute_path <- canonicalizePath filename
             let ep = foldl1 (<|>) $ Nothing : (map lastEpisodeFile files)
-            let eps = catMaybes $ map (parseEpisodeFromTitle show_name) files
+            let eps = catMaybes $ map parseEpisode $ filter (isTitleValid show_name) files
+            
+            -- print some useful information
+            case ep of
+                Nothing -> return ()
+                Just e -> (putStrLn $ "Processing '" ++ filename ++ "'...") >>
+                          (putStrLn $ "Latest watched episode: " ++ show e)
+            case eps of
+                [] -> return ()
+                xs -> putStrLn $ "Latest episode on disk: " ++ show (maximum xs)
             
             -- if some episodes are present that are more recent then last episode file suggests
             -- then use them
