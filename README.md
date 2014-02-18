@@ -20,17 +20,18 @@ Usage:
 Example:
 --------
 
-ROOT/
-	big_bang_theory/
-		last_S02E03
-		The.Big.Bang.Theory.S03E15.720p.DIMESION.Blah.Blah.mkv
-		The.Big.Bang.Theory.S03E16.720p.DIMESION.Blah.Blah.mkv
-		The.Big.Bang.Theory.S03E17.720p.DIMESION.Blah.Blah.mkv
-		The.Big.Bang.Theory.S03E18.720p.DIMESION.Blah.Blah.mkv
-		...
-	the_mentalist/
-		last_S05E13
-		...
+
+	ROOT/
+	    big_bang_theory/
+    		last_S02E03
+    		The.Big.Bang.Theory.S03E15.720p.DIMESION.Blah.Blah.mkv
+    		The.Big.Bang.Theory.S03E16.720p.DIMESION.Blah.Blah.mkv
+    		The.Big.Bang.Theory.S03E17.720p.DIMESION.Blah.Blah.mkv
+    		The.Big.Bang.Theory.S03E18.720p.DIMESION.Blah.Blah.mkv
+    		...
+	    the_mentalist/
+    		last_S05E13
+    		...
 		
 Based on this structure, the latest episode for the Big Bang Theory will be considered S03E18
 (max between all present episodes and 'last\_EPISODE' file). Similarly, for the mentalist,
