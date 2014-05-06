@@ -13,9 +13,41 @@ import Config
 import FSUtils
 import TVShow
 
+import Codec.Compression.GZip (decompress)
+import Control.Arrow (second)
+import Control.Monad (liftM)
+import Network.Browser
+import Network.HTTP.Headers (HasHeaders, HeaderName (..), findHeader, replaceHeader)
+import Network.TCP (HStream, HandleStream)
+import Network.URI (URI, parseURI)
+import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8, decodeUtf8)
+
 configFilename :: String
 configFilename = "tpbhs.config"
 
+getPage :: String -> IO String
+getPage url = B.unpack <$> rspBody . snd <$> (getResponse url)
+  where
+    getResponse url = browse $ do
+        setOutHandler (const (return ()))
+        gzipRequest . fromJust . parseURI $ url
+    
+gzipRequest :: URI -> BrowserAction (HandleStream B.ByteString) (URI, Response B.ByteString)
+gzipRequest
+  = liftM (second unzipIfNeeded)
+  . request
+  . replaceHeader HdrAcceptEncoding "gzip"
+  . defaultGETRequest_
+  where
+    unzipIfNeeded rsp
+      | isGz rsp  = rsp { rspBody = decompress $ rspBody rsp }
+      | otherwise = rsp
+      where
+        isGz rsp = maybe False (== "gzip") $ findHeader HdrContentEncoding rsp
+
+{-
 getPage :: String -> IO String
 getPage url = do
         let req = getRequest url
@@ -27,7 +59,7 @@ getPage url = do
         -- if it sees content-length header with a value "0" in GET request, it returns error 400
         isContentLength (Header HdrContentLength _) = True
         isContentLength (Header _ _) = False
-
+-}
 
 data Quality = HD | SD
 

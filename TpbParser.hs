@@ -23,8 +23,8 @@ findTagText tags = fmap fromTagText $ find isTagText tags
 
 parseTable :: String -> Either Error [Tag String]
 parseTable page = case listToMaybe $ extract "table" [("id", "searchResult")] $ parseTags page of
-                       Nothing -> Left "No table found"
-                       Just t -> Right t
+                               Nothing -> Left "No table found"
+                               Just t -> Right t
 
 parseRows :: [Tag String] -> [[Tag String]]
 parseRows table = extractTag "tr" table
