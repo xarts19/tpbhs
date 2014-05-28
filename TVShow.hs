@@ -38,7 +38,7 @@ rMatch str regex = getAllTextSubmatches (str =~ regex :: AllTextSubmatches [] St
 joinRegex :: [String] -> String
 joinRegex [] = []
 joinRegex (x:[]) = x
-joinRegex (x:xs) = x ++ ".*" ++ joinRegex xs
+joinRegex (x:xs) = x ++ "([._ -]|the|a)*" ++ joinRegex xs
 
 parseEpisode :: String -> Maybe Episode
 parseEpisode str = parse' $ match' $ map toLower $ str
@@ -77,4 +77,4 @@ isTitleValid showName title = (not . null) $ rMatch normTitle nameAndEpRegex
     where
         normTitle = map toLower title
         normShowName = map toLower showName
-        nameAndEpRegex = joinRegex (myWords normShowName ++ [episodeRegex])
+        nameAndEpRegex = joinRegex (["^"] ++ myWords normShowName ++ [episodeRegex])

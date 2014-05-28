@@ -5,7 +5,6 @@ module TpbHs
 import Data.Ord
 import Data.List
 import Data.Maybe
-import Control.Applicative
 import Network.HTTP
 import qualified Torrent as T
 import TpbParser
@@ -57,7 +56,7 @@ getTorrentFor tvshow_name episode q = do
              putStrLn $ "Nothing found: " ++ err
              return Nothing
          Right table -> do
-             let filtered = filter (liftA2 (&&) sizeCorrect hasSeeds) table
+             let filtered = filter (\x -> all ($ x) [nameCorrect, sizeCorrect, hasSeeds]) table
              let sorted = reverse $ sortBy (comparing T.seeders) filtered
              if (null sorted) then do
                                 putStrLn "Nothing found"
@@ -65,6 +64,7 @@ getTorrentFor tvshow_name episode q = do
                               else
                                 return $ Just $ head sorted
     where
+        nameCorrect tor = isTitleValid tvshow_name $ T.name tor
         sizeCorrect tor = T.size tor > T.Bytes (100 * T.mega) && T.size tor < T.Bytes (3 * T.giga)
         hasSeeds tor = T.seeders tor > 0
 
