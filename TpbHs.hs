@@ -16,19 +16,16 @@ import TVShow
 import Codec.Compression.GZip (decompress)
 import Control.Arrow (second)
 import Control.Monad (liftM)
+import Control.Applicative
 import Network.Browser
-import Network.HTTP.Headers (HasHeaders, HeaderName (..), findHeader, replaceHeader)
-import Network.TCP (HStream, HandleStream)
 import Network.URI (URI, parseURI)
 import qualified Data.ByteString.Lazy.Char8 as B
-import qualified Data.Text as T
-import Data.Text.Encoding (encodeUtf8, decodeUtf8)
 
 configFilename :: String
 configFilename = "tpbhs.config"
 
 getPage :: String -> IO String
-getPage url = B.unpack <$> rspBody . snd <$> (getResponse url)
+getPage page_url = B.unpack <$> rspBody . snd <$> (getResponse page_url)
   where
     getResponse url = browse $ do
         setOutHandler (const (return ()))
@@ -45,7 +42,7 @@ gzipRequest
       | isGz rsp  = rsp { rspBody = decompress $ rspBody rsp }
       | otherwise = rsp
       where
-        isGz rsp = maybe False (== "gzip") $ findHeader HdrContentEncoding rsp
+        isGz r = maybe False (== "gzip") $ findHeader HdrContentEncoding r
 
 {-
 getPage :: String -> IO String
@@ -84,8 +81,8 @@ getTorrentFor tvshow_name episode q = do
     putStrLn $ "Searching for '" ++ search' ++ "'..."
     page <- getPage $ tpb_get_search_url q search'
     case parseResultsPage page of
-         Left err -> do
-             putStrLn $ "Nothing found: " ++ err
+         Left failure -> do
+             putStrLn $ "Nothing found: " ++ failure
              return Nothing
          Right table -> do
              let filtered = filter (\x -> all ($ x) [nameCorrect, sizeCorrect, hasSeeds]) table
@@ -143,5 +140,5 @@ getNewEpisodes = do
     tvshows <- enumShows
     _ <- mapM getNewEpisodes' tvshows
     case writeConfig tvshows of
-      Left err -> putStrLn err
+      Left failure -> putStrLn failure
       Right str -> writeFile configFilename str
